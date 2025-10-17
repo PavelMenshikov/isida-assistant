@@ -1,5 +1,5 @@
 # ======================================================================================
-# ISIDA: Ассистент режиссера (V1.1 - Стабильный Релиз)
+# ISIDA: Ассистент режиссера (V10.0 - Финальный релиз на основе стабильной версии)
 # ======================================================================================
 
 import streamlit as st
@@ -8,7 +8,6 @@ from mistralai.client import MistralClient
 import os
 import re
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -47,6 +46,9 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY') or st.secrets.get('GROQ_API_KEY')
 MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY') or st.secrets.get('MISTRAL_API_KEY')
 
 try:
+    if not GROQ_API_KEY or not MISTRAL_API_KEY:
+        st.error("API ключи не найдены. Пожалуйста, добавьте их в .env файл или в Secrets на Streamlit Cloud.")
+        st.stop()
     groq_client = Groq(api_key=GROQ_API_KEY)
     mistral_client = MistralClient(api_key=MISTRAL_API_KEY)
 except Exception as e:
@@ -64,6 +66,31 @@ def clean_markdown_for_copy(markdown_text):
     text = re.sub(r'-\|', '', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
+
+
+def custom_copy_button(text_to_copy, button_text):
+    """Генерирует HTML/JS для кастомной кнопки копирования."""
+   
+    element_id = "text-to-copy-" + str(hash(text_to_copy))
+    
+    
+    button_html = f"""
+    <div id="{element_id}" style="display: none;">{text_to_copy}</div>
+    <button onclick="copyToClipboard_{element_id}()">
+        {button_text}
+    </button>
+    <script>
+    function copyToClipboard_{element_id}() {{
+        const text = document.getElementById('{element_id}').innerText;
+        navigator.clipboard.writeText(text).then(() => {{
+            alert('Текст скопирован!');
+        }}, (err) => {{
+            alert('Ошибка копирования. Попробуйте вручную.');
+        }});
+    }}
+    </script>
+    """
+    st.markdown(button_html, unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.5, 2, 0.5])
 
@@ -85,7 +112,7 @@ with col2:
             final_text = ""
             try:
                 
-                with st.spinner("Этап 1/2: Исследователь (Groq) ищет контекст с учетом ваших пожеланий..."):
+                with st.spinner("Этап 1/2: Исследователь (Groq) ищет контекст..."):
                     research_prompt = (
                         f"Проведи детальное исследование для пьесы '{piece_title}' автора {author}. "
                         "Используй свои поисковые возможности. Найди и структурируй в виде краткого отчета: "
@@ -102,7 +129,7 @@ with col2:
                     research_result = research_completion.choices[0].message.content
                     st.info("✅ Контекст найден!")
                
-                with st.spinner("Этап 2/2: Аналитик (Mistral) пишет экспликацию на основе найденных данных..."):
+                with st.spinner("Этап 2/2: Аналитик (Mistral) пишет экспликацию..."):
                     analysis_prompt = (
                         f"Ты — высококлассный ассистент театрального режиссера. Напиши полную режиссерскую "
                         f"экспликацию для пьесы '{piece_title}' автора {author}.\n\n"
@@ -124,9 +151,9 @@ with col2:
                 st.header("✅ Готовая экспликация:")
                 
                 if final_text:
-                    clean_text = clean_markdown_for_copy(final_text)
-                    st.text_area("Текст для копирования в Google Docs / Word", clean_text, height=200, key="copy_area")
-                 
+                    clean_text = clean_markdown_for_copy(final_text)                   
+                    custom_copy_button(clean_text, "📋 Скопировать весь текст")
+                    
                     st.download_button(
                         label="📥 Скачать всю экспликацию (.txt)",
                         data=clean_text,
@@ -142,7 +169,6 @@ with col2:
                         title_match = re.search(r'#+\s*(.*)', cleaned_section_text)                        
                         title_for_file = title_match.group(1).strip() if title_match and title_match.group(1).strip() else f"Раздел_{i+1}"
                         
-                       
                         display_title_match = re.search(r'#+\s*(.*)', section)
                         display_title = display_title_match.group(1).strip() if display_title_match else "Дополнительно"
 
@@ -164,7 +190,7 @@ with col2:
     st.markdown("---")    
     st.markdown("""
         <div style='text-align: center; color: grey;'>
-            Made with ☕️ and ❤️.<br>
+            Made with ☕️ and ❤️ for Izi.<br>
             Поделиться обратной связью можно <a href="https://t.me/LaSiddhartha" target="_blank" style="color: #888; text-decoration: underline;">в Telegram</a>.
         </div>
     """, unsafe_allow_html=True)

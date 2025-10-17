@@ -29,7 +29,8 @@
 
 1.  Клонируйте репозиторий:
     ```sh
-    git clone https://github.com/ВАШ_АККАУНТ/isida-assistant.git
+    git clone https://github.com/PavelMenshikov/isida-assistant.git
+
     cd isida-assistant
     ```
 2.  Создайте и активируйте виртуальное окружение:

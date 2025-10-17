@@ -1,5 +1,4 @@
 streamlit
-streamlit-copy-button
 groq
 mistralai
 python-dotenv
