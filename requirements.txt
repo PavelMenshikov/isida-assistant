@@ -1,4 +1,4 @@
 streamlit
 groq
-mistralai
+mistralai==0.4.2
 python-dotenv
