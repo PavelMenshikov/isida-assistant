@@ -2,3 +2,5 @@ streamlit
 groq
 mistralai==0.4.2
 python-dotenv
+pytest
+pytest-mock
